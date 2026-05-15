@@ -815,70 +815,76 @@ class _KoospiDashboardState extends State<KoospiDashboard>
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: features.map((f) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 24),
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: inguMode ? const Color(0xFF0F0F0F) : Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                color: inguMode
-                    ? Colors.deepOrange.withOpacity(0.3)
-                    : Colors.blueGrey[200]!,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: inguMode
-                      ? Colors.deepOrange.withOpacity(0.05)
-                      : Colors.blueGrey.withOpacity(0.05),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: features.asMap().entries.map((entry) {
+            final int index = entry.key;
+            final Map<String, dynamic> f = entry.value;
+            return Expanded(
+              child: Container(
+                margin: EdgeInsets.only(right: index == features.length - 1 ? 0 : 24),
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: inguMode ? const Color(0xFF0F0F0F) : Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
                     color: inguMode
-                        ? Colors.deepOrange.withOpacity(0.1)
-                        : Colors.blue.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
+                        ? Colors.deepOrange.withOpacity(0.3)
+                        : Colors.blueGrey[200]!,
                   ),
-                  child: Icon(
-                    f['icon'] as IconData,
-                    size: 28,
-                    color: inguMode ? Colors.deepOrange : Colors.blue[600],
-                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: inguMode
+                          ? Colors.deepOrange.withOpacity(0.05)
+                          : Colors.blueGrey.withOpacity(0.05),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  (inguMode ? f['inguTitle'] : f['title']) as String,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: inguMode ? Colors.white : Colors.blueGrey[900],
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: inguMode
+                            ? Colors.deepOrange.withOpacity(0.1)
+                            : Colors.blue.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        f['icon'] as IconData,
+                        size: 28,
+                        color: inguMode ? Colors.deepOrange : Colors.blue[600],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      (inguMode ? f['inguTitle'] : f['title']) as String,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: inguMode ? Colors.white : Colors.blueGrey[900],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      (inguMode ? f['inguDesc'] : f['desc']) as String,
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.5,
+                        color: inguMode ? Colors.grey[400] : Colors.blueGrey[500],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  (inguMode ? f['inguDesc'] : f['desc']) as String,
-                  style: TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
-                    color: inguMode ? Colors.grey[400] : Colors.blueGrey[500],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -1134,7 +1140,8 @@ class _KoospiDashboardState extends State<KoospiDashboard>
   }
 
   Widget _buildFilterChips() {
-    if (inguMode || !scanComplete || results.isEmpty) return const SizedBox.shrink();
+    if (inguMode || !scanComplete || results.isEmpty)
+      return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
