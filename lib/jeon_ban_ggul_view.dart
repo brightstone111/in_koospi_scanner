@@ -40,6 +40,7 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
   bool isButtonPressed = false;
+  bool _canExitMode = false;
   final AudioPlayer audioPlayer = AudioPlayer();
 
   @override
@@ -118,6 +119,10 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
         "https://assets.mixkit.co/active_storage/sfx/133/133-preview.mp3",
       ),
     );
+
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) setState(() => _canExitMode = true);
+    });
   }
 
   @override
@@ -130,6 +135,8 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
   }
 
   void handleSecretClick() {
+    if (!_canExitMode) return;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -181,7 +188,7 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
         animation: _shakeAnimation,
         builder: (context, child) {
           return Transform.translate(
-            offset: Offset(_shakeAnimation.value, _shakeAnimation.value * 0.5),
+            offset: Offset(_shakeAnimation.value, 0.0),
             child: child,
           );
         },
