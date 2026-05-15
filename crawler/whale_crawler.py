@@ -123,7 +123,7 @@ async def crawl_dataroma_activity():
             "name": info["name"],
             "title": quote, 
             "ingu_position": ingu_position,
-            "video_id": f"13F_{ticker}_{random.randint(1000, 9999)}",
+            "video_id": f"13F_{ticker}_" + "|".join(funds),
             "url": "https://www.dataroma.com"
         })
         

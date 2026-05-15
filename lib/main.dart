@@ -219,7 +219,7 @@ class _KoospiDashboardState extends State<KoospiDashboard>
     });
 
     try {
-      if (inguMode) {
+      if (!inguMode) {
         final response = await http.get(
           Uri.parse(
             '$SUPABASE_URL/rest/v1/ingu_signals?select=*&order=id.desc',
@@ -1134,7 +1134,7 @@ class _KoospiDashboardState extends State<KoospiDashboard>
   }
 
   Widget _buildFilterChips() {
-    if (!scanComplete || results.isEmpty) return const SizedBox.shrink();
+    if (inguMode || !scanComplete || results.isEmpty) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
@@ -1296,70 +1296,151 @@ class _KoospiDashboardState extends State<KoospiDashboard>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.insights,
-                                  size: 16,
-                                  color: inguMode
-                                      ? Colors.deepOrange[300]
-                                      : Colors.blue[600],
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    "포지션: ${item['ingu_position'] ?? '데이터 없음'}",
+                            if (!inguMode) ...[
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.insights,
+                                    size: 16,
+                                    color: Colors.blue[600],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "포지션: ${item['ingu_position'] ?? '데이터 없음'}",
+                                      style: TextStyle(
+                                        color: Colors.blue[800],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.trending_up,
+                                    size: 16,
+                                    color: Colors.greenAccent[400],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "기대 수익: ${item['ban_ggul_return'] ?? '+${(item['score'] ?? 90) * 1.5}% (추정)'}",
                                     style: TextStyle(
-                                      color: inguMode
-                                          ? Colors.deepOrange[300]
-                                          : Colors.blue[800],
+                                      color: Colors.greenAccent[400],
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.trending_up,
-                                  size: 16,
-                                  color: Colors.greenAccent[400],
-                                ),
-                                const SizedBox(width: 8),
+                                ],
+                              ),
+                              if (item['video_id'] != null &&
+                                  item['video_id'].toString().startsWith(
+                                    '13F_',
+                                  )) ...[
+                                const SizedBox(height: 12),
+                                Divider(color: Colors.blueGrey[200]),
+                                const SizedBox(height: 8),
                                 Text(
-                                  "기대 수익: ${item['ban_ggul_return'] ?? '+${(item['score'] ?? 90) * 1.5}% (추정)'}",
+                                  "매수 기관 상세 내역:",
                                   style: TextStyle(
-                                    color: Colors.greenAccent[400],
+                                    color: Colors.blueGrey[400],
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                ...item['video_id']
+                                    .toString()
+                                    .split('_')
+                                    .skip(2)
+                                    .join('_')
+                                    .split('|')
+                                    .map((fund) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 6.0,
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Icon(
+                                              Icons.check_circle,
+                                              size: 14,
+                                              color: Colors.blue[400],
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                fund,
+                                                style: TextStyle(
+                                                  color: Colors.blueGrey[700],
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    })
+                                    .toList(),
                               ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(
-                                  Icons.chat_bubble_outline,
-                                  size: 16,
-                                  color: Colors.grey[500],
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    "인구신 한마디: \"${item['title'] ?? '...'}\"",
-                                    style: TextStyle(
-                                      color: inguMode
-                                          ? Colors.grey[400]
-                                          : Colors.blueGrey[600],
-                                      fontStyle: FontStyle.italic,
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.chat_bubble_outline,
+                                    size: 16,
+                                    color: Colors.grey[500],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "인구신 한마디: \"${item['title'] ?? '...'}\"",
+                                      style: TextStyle(
+                                        color: Colors.blueGrey[600],
+                                        fontStyle: FontStyle.italic,
+                                      ),
                                     ),
                                   ),
+                                ],
+                              ),
+                            ] else ...[
+                              Text(
+                                "토스 패닉 지수: ${item['tossPanic'] ?? 'N/A'}",
+                                style: const TextStyle(
+                                  color: Colors.redAccent,
+                                  fontWeight: FontWeight.w900,
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "투심: ${item['krxSentiment'] ?? 'N/A'}",
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "상태: ${item['chartStatus'] ?? 'N/A'}",
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "키워드: ${item['tossKeyword'] ?? 'N/A'}",
+                                style: TextStyle(
+                                  color: Colors.deepOrange[300],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
