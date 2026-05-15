@@ -115,20 +115,6 @@ class _ScannerHomeState extends State<ScannerHome> {
 
   @override
   Widget build(BuildContext context) {
-    // 공통 속성들을 한 번에 정의해서 넘겨줍니다.
-    final commonProps = {
-      'results': results,
-      'isScanning': isScanning,
-      'scanProgress': scanProgress,
-      'scanComplete': scanComplete,
-      'onStartScan': startScan,
-      'onToggleMode': _toggleMode,
-      'scrollController': _scrollController,
-      'scannerKey': _scannerKey,
-      'showTooltip': showTooltip,
-      'tooltipMessage': tooltipMessage,
-    };
-
     if (inguMode) {
       return JeonBanGgulView(
         results: results,
