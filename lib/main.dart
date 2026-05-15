@@ -42,6 +42,7 @@ class _KoospiDashboardState extends State<KoospiDashboard>
   bool scanComplete = false;
   int scanProgress = 0;
   List<dynamic> results = [];
+  String currentFilter = '전체';
 
   // 이스터 에그 상태 관리
   int secretClicks = 0;
@@ -231,6 +232,21 @@ class _KoospiDashboardState extends State<KoospiDashboard>
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body) as List<dynamic>;
+
+          // 점수 부여 및 정렬 로직 (DB에 score가 없다면 임의 부여)
+          for (var item in data) {
+            if (item['score'] == null) {
+              // 텍스트 기반 가중치
+              if ((item['title'] ?? '').contains('세력'))
+                item['score'] = 98;
+              else if ((item['title'] ?? '').contains('수상한'))
+                item['score'] = 92;
+              else
+                item['score'] = 85;
+            }
+          }
+          data.sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
+
           if (mounted) {
             setState(() {
               results = data;
@@ -1070,9 +1086,10 @@ class _KoospiDashboardState extends State<KoospiDashboard>
                 ],
               ),
             )
-          else if (scanComplete)
-            _buildResultsTable()
-          else
+          else if (scanComplete) ...[
+            _buildFilterChips(),
+            _buildResultsTable(),
+          ] else
             Padding(
               padding: const EdgeInsets.all(80.0),
               child: Column(
@@ -1116,172 +1133,238 @@ class _KoospiDashboardState extends State<KoospiDashboard>
     );
   }
 
+  Widget _buildFilterChips() {
+    if (!scanComplete || results.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: ['전체', '기관픽', '개미지옥'].map((filter) {
+          final isSelected = currentFilter == filter;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: ChoiceChip(
+              label: Text(
+                filter,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isSelected
+                      ? Colors.white
+                      : (inguMode ? Colors.white70 : Colors.blueGrey[700]),
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: inguMode ? Colors.deepOrange : Colors.blue[600],
+              backgroundColor: inguMode
+                  ? Colors.grey[900]
+                  : Colors.blueGrey[50],
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    currentFilter = filter;
+                  });
+                }
+              },
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildResultsTable() {
+    // 필터링 적용
+    final filteredResults = results.where((item) {
+      if (currentFilter == '전체') return true;
+      final title = (item['title'] ?? '') as String;
+      if (currentFilter == '기관픽') {
+        return title.contains('세력') || title.contains('수급');
+      } else if (currentFilter == '개미지옥') {
+        return title.contains('WhaleWisdom') ||
+            title.contains('개미') ||
+            title.contains('구조대') ||
+            title.contains('상폐') ||
+            title.contains('투매');
+      }
+      return true;
+    }).toList();
+
     return Column(
       children: [
-        if (results.isEmpty)
+        if (filteredResults.isEmpty)
           Padding(
             padding: const EdgeInsets.all(40.0),
             child: Text(
-              inguMode
-                  ? "데이터를 불러오지 못했거나, Supabase 테이블이 비어있습니다. 은혁님께 데이터를 채워달라고 요청하세요!"
-                  : "결과가 없습니다.",
+              inguMode ? "해당 조건에 맞는 시그널이 없습니다." : "결과가 없습니다.",
               style: const TextStyle(color: Colors.grey),
               textAlign: TextAlign.center,
             ),
           )
         else
-          ListView.separated(
+          ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: results.length,
-            separatorBuilder: (context, index) => Divider(
-              color: inguMode
-                  ? Colors.deepOrange.withOpacity(0.1)
-                  : Colors.blueGrey[100],
-              height: 1,
-            ),
+            itemCount: filteredResults.length,
             itemBuilder: (context, index) {
-              final item = results[index];
-              return Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: inguMode
-                                ? Colors.deepOrange.withOpacity(0.1)
-                                : Colors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Center(
-                            child: Text(
-                              (item['ticker'] ?? '?')[0],
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                color: inguMode
-                                    ? Colors.deepOrange
-                                    : Colors.blue[600],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+              final item = filteredResults[index];
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                color: inguMode ? const Color(0xFF1A1A1A) : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: inguMode
+                        ? Colors.deepOrange.withOpacity(0.3)
+                        : Colors.blueGrey[100]!,
+                    width: 1,
+                  ),
+                ),
+                elevation: inguMode ? 5 : 2,
+                shadowColor: inguMode
+                    ? Colors.deepOrange.withOpacity(0.2)
+                    : Colors.blueGrey.withOpacity(0.1),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                inguMode
-                                    ? (item['name'] ??
-                                          item['title'] ??
-                                          "데이터 없음")
-                                    : item['ticker'],
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: inguMode
-                                      ? Colors.white
-                                      : Colors.blueGrey[900],
+                              CircleAvatar(
+                                radius: 24,
+                                backgroundColor: inguMode
+                                    ? Colors.deepOrange.withOpacity(0.1)
+                                    : Colors.blue[50],
+                                child: Text(
+                                  (item['ticker'] ?? '?')[0],
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    color: inguMode
+                                        ? Colors.deepOrange
+                                        : Colors.blue[700],
+                                  ),
                                 ),
                               ),
-                              Text(
-                                inguMode ? item['ticker'] ?? '' : item['name'],
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blueGrey[400],
-                                ),
+                              const SizedBox(width: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "${item['name']} (${item['ticker']})",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      color: inguMode
+                                          ? Colors.white
+                                          : Colors.blueGrey[900],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "AI 분석 점수: ${item['score'] ?? 90}점",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: (item['score'] ?? 0) >= 95
+                                          ? Colors.redAccent
+                                          : Colors.blueGrey[400],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ),
-                        if (!inguMode)
-                          Text(
-                            '${item['score']}',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: (item['score'] ?? 0) > 90
-                                  ? Colors.blue[600]
-                                  : Colors.blueGrey[400],
-                            ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.blueGrey[300],
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: inguMode
-                            ? Colors.grey[900]
-                            : Colors.blueGrey[50],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (inguMode) ...[
-                            Text(
-                              item['inguQuote'] ??
-                                  item['title'] ??
-                                  "유튜브 제목 데이터가 여기에 표시됩니다.",
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "포지션: ${item['ingu_position'] ?? '분석중'}",
-                              style: TextStyle(
-                                color: Colors.deepOrange[300],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "수익률: ${item['ban_ggul_return'] ?? '계산 중...'}",
-                              style: const TextStyle(
-                                color: Colors.blueAccent,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ] else ...[
-                            Text(
-                              "ARK 매수비율: ${item['arkBuy']}",
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "투심: ${item['krxSentiment']}",
-                              style: TextStyle(
-                                color: Colors.blueGrey[700],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "상태: ${item['chartStatus']}",
-                              style: TextStyle(
-                                color: Colors.blueGrey[600],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: inguMode ? Colors.black : Colors.blueGrey[50],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.insights,
+                                  size: 16,
+                                  color: inguMode
+                                      ? Colors.deepOrange[300]
+                                      : Colors.blue[600],
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "포지션: ${item['ingu_position'] ?? '데이터 없음'}",
+                                    style: TextStyle(
+                                      color: inguMode
+                                          ? Colors.deepOrange[300]
+                                          : Colors.blue[800],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.trending_up,
+                                  size: 16,
+                                  color: Colors.greenAccent[400],
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "기대 수익: ${item['ban_ggul_return'] ?? '+${(item['score'] ?? 90) * 1.5}% (추정)'}",
+                                  style: TextStyle(
+                                    color: Colors.greenAccent[400],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 16,
+                                  color: Colors.grey[500],
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "인구신 한마디: \"${item['title'] ?? '...'}\"",
+                                    style: TextStyle(
+                                      color: inguMode
+                                          ? Colors.grey[400]
+                                          : Colors.blueGrey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -1307,8 +1390,8 @@ class _KoospiDashboardState extends State<KoospiDashboard>
               const SizedBox(width: 12),
               Text(
                 inguMode
-                    ? "Supabase DB 기반 총 ${results.length}개의 전반꿀 데이터 로드 완료"
-                    : "최종 분석 결과 ${results.length}개의 유효 시그널 매칭 완료",
+                    ? "Supabase DB 기반 필터링된 ${filteredResults.length}개의 전반꿀 데이터"
+                    : "최종 분석 결과 ${filteredResults.length}개의 유효 시그널 매칭 완료",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: inguMode ? Colors.deepOrange : Colors.blue[600],
