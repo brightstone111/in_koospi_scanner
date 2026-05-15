@@ -109,21 +109,21 @@ async def crawl_dataroma_activity():
         
         funds_str = ", ".join(funds[:2]) # 최대 2개만 텍스트 노출
         if count > 2:
-            ingu_position = f"스마트머니 집중매수: [{funds_str} 등 {count}개 기관 동시 매수 포착!]"
+            whale_position = f"스마트머니 집중매수: [{funds_str} 등 {count}개 기관 동시 매수 포착!]"
             quote = f"🚨 세력의 은밀한 매수 포착! ({count}개 펀드 진입)"
         elif count == 2:
-            ingu_position = f"스마트머니 교차매수: [{funds[0]}, {funds[1]} 공동 편입]"
+            whale_position = f"스마트머니 교차매수: [{funds[0]}, {funds[1]} 공동 편입]"
             quote = f"👀 수상한 수급 포착! 유명 펀드 2곳 동시 매수"
         else:
-            ingu_position = f"고래의 사냥: [{funds[0]} 단독 비중 확대]"
+            whale_position = f"고래의 사냥: [{funds[0]} 단독 비중 확대]"
             quote = f"[WhaleWisdom 13F] {random.choice(panic_keywords)}"
             
         data_list.append({
             "ticker": ticker,
             "name": info["name"],
-            "title": quote, 
-            "ingu_position": ingu_position,
-            "video_id": f"13F_{ticker}_" + "|".join(funds),
+            "analysis_summary": quote, 
+            "whale_position": whale_position,
+            "signal_id": f"13F_{ticker}_" + "|".join(funds),
             "url": "https://www.dataroma.com"
         })
         
@@ -132,33 +132,30 @@ async def crawl_dataroma_activity():
 
     print(f"✅ 총 {len(data_list)}개의 교차 분석 알파 시그널 추출 완료!")
     for idx, item in enumerate(data_list[:5]):
-        print(f"  {idx+1}. {item['ticker']} ({item['name']}) - {item['ingu_position']}")
+        print(f"  {idx+1}. {item['ticker']} ({item['name']}) - {item['whale_position']}")
 
-    # 4. Supabase 데이터베이스에 업로드 (기존 데이터 비우고 새로 채움)
+    # 4. Supabase 데이터베이스에 업로드
     print("[4/4] Supabase 데이터베이스 업데이트 중...")
     headers = {
         "apikey": SUPABASE_ANON_KEY,
         "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
         "Content-Type": "application/json",
-        "Prefer": "resolution=ignore-duplicates"
+        "Prefer": "resolution=merge-duplicates" # 중복 시 업데이트 (덮어쓰기)
     }
     
-    # 먼저 stock_metadata에 등록
+    # 1. 먼저 stock_metadata에 등록 (종목 정보 업데이트)
     stock_meta_url = f"{SUPABASE_URL}/rest/v1/stock_metadata"
     meta_list = [{"ticker": item["ticker"], "name": item["name"]} for item in data_list]
     requests.post(stock_meta_url, headers=headers, data=json.dumps(meta_list))
 
-    # 기존 데이터 전체 삭제 (최신 리스트로 교체하기 위해)
-    delete_url = f"{SUPABASE_URL}/rest/v1/ingu_signals?id=gt.0"
-    requests.delete(delete_url, headers=headers)
-
-    # 새로운 데이터 삽입
-    headers["Prefer"] = "return=minimal"
-    insert_url = f"{SUPABASE_URL}/rest/v1/ingu_signals"
+    # 2. 새로운 whale_signals 테이블에 데이터 삽입/업데이트
+    # 기존 데이터를 싹 지우는 대신, upsert(중복 시 업데이트) 방식을 사용합니다.
+    headers["Prefer"] = "resolution=merge-duplicates"
+    insert_url = f"{SUPABASE_URL}/rest/v1/whale_signals"
     response = requests.post(insert_url, headers=headers, data=json.dumps(data_list))
     
     if response.status_code in (201, 200, 204):
-        print("🎉 Supabase DB 13F 교차분석 업데이트 완료! 플러터 앱에서 즉시 확인 가능합니다.")
+        print("🎉 Supabase DB 'whale_signals' 업데이트 완료! 이제 인구신 데이터와 분리되었습니다.")
     else:
         print(f"❌ Supabase 업데이트 실패: {response.status_code} - {response.text}")
 
