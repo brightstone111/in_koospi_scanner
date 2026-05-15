@@ -207,6 +207,7 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
           ],
         ),
       ),
+      ),
     );
   }
 
