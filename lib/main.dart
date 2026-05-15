@@ -13,12 +13,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'IN_KOOSPI_QUANT',
+      title: 'KOOSPI',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Pretendard',
-        useMaterial3: true,
-      ),
+      theme: ThemeData(fontFamily: 'Pretendard', useMaterial3: true),
       home: const ScannerHome(),
     );
   }
