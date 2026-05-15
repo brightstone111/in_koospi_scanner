@@ -37,6 +37,8 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
   late AnimationController _buttonController;
   late Animation<double> _buttonAnimation;
   late AnimationController _shimmerController;
+  late AnimationController _shakeController;
+  late Animation<double> _shakeAnimation;
   bool isButtonPressed = false;
   final AudioPlayer audioPlayer = AudioPlayer();
 
@@ -90,6 +92,25 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
       duration: const Duration(seconds: 3),
     )..repeat();
 
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _shakeAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 15.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 15.0, end: -15.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -15.0, end: 15.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 15.0, end: -15.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -15.0, end: 10.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 10.0, end: -10.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -10.0, end: 5.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 5.0, end: -5.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -5.0, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn));
+
+    _shakeController.forward();
+
     audioPlayer.setVolume(0.4);
     audioPlayer.setReleaseMode(ReleaseMode.loop);
     audioPlayer.play(
@@ -104,6 +125,7 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
     audioPlayer.dispose();
     _buttonController.dispose();
     _shimmerController.dispose();
+    _shakeController.dispose();
     super.dispose();
   }
 
@@ -155,11 +177,19 @@ class _JeonBanGgulViewState extends State<JeonBanGgulView>
           bodyMedium: TextStyle(color: textColor),
         ),
       ),
-      child: Scaffold(
-        backgroundColor: bgColor,
-        body: Column(
-          children: [
-            _buildHeader(),
+      child: AnimatedBuilder(
+        animation: _shakeAnimation,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(_shakeAnimation.value, _shakeAnimation.value * 0.5),
+            child: child,
+          );
+        },
+        child: Scaffold(
+          backgroundColor: bgColor,
+          body: Column(
+            children: [
+              _buildHeader(),
             _buildWarningBanner(),
             Expanded(
               child: SingleChildScrollView(
