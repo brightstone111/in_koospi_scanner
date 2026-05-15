@@ -67223,7 +67223,7 @@ return s},
 $S:155}
 A.En.prototype={
 P(a){var s=null
-return new A.uP(B.Cz,"(\uc778)KOOSPI",A.a45(s,s,"Roboto",s,s,s),!1,s)}}
+return new A.uP(B.Cz,"KOOSPI",A.a45(s,s,"Roboto",s,s,s),!1,s)}}
 A.uz.prototype={
 ap(){var s=t.s,r=t.N,q=t.z
 return new A.yq([],new A.fo(Date.now(),0,!1),A.aqO(),A.a0Q(),new A.bu(null,t.C),A.c([A.aw(["id",1,"ticker","PLTR","name","\ud314\ub780\ud2f0\uc5b4","arkBuy","+4.2%","institutions",A.c(["ARK \uc778\ubca0\uc2a4\ud2b8","\ub974\ub124\uc0c1\uc2a4","\ube14\ub799\ub85d"],s),"tossPanic","98%","krxSentiment","\uadf9\ub2e8\uc801 \uacf5\ud3ec (\ud22c\ub9e4)","tossKeyword","\uc0c1\ud3d0, \uc0ac\uae30, \uad6c\uc870\ub300","chartStatus","\ub9e4\uc218 \uac15\uc138 (\uac70\ub798\ub7c9 \ud3ed\uc99d)","score",99],r,q),A.aw(["id",2,"ticker","TSLA","name","\ud14c\uc2ac\ub77c","arkBuy","+2.8%","institutions",A.c(["\ubc45\uac00\ub4dc","\ube14\ub799\ub85d","ARK"],s),"tossPanic","92%","krxSentiment","\uacf5\ud3ec (\ud328\ub2c9\uc140)","tossKeyword","\uc77c\ub860\uba38\uc2a4\ud06c, \uc190\uc808, \ub05d\ub0a8","chartStatus","\uc774\ud3c9\uc120 \uc218\ub834 (\uc0c1\uc2b9 \ub3cc\ud30c)","score",94],r,q)],t.gG),null,null)}}
